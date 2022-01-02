@@ -6,11 +6,10 @@ from data import *
 import png
 
 class World(object):
-    def __init__(self, height, width, name) -> None:
+    def __init__(self, name,width =  500, height = 500) -> None:
+        self.name = name
         self._width = width
         self._height = height
-        self.name = name
-
         self._hmap = [[0 for i in range(width)] for i in range(height)]
         self._tmap = [["" for i in range(width)] for i in range(height)]
 
@@ -26,6 +25,9 @@ class World(object):
     
     def get_tmap(self):
         return self._tmap
+    
+    def get_name(self):
+        return self.name
 
     def get_hvals(self, qposs):
         vals = []
@@ -46,7 +48,12 @@ class World(object):
         x2, y2 = pos2
         return m.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
-    def generate_terrain(self):
+    def generate_terrain(self, rivers, river_distance):
+        """Generates the world's terrain.
+        Parameters:
+            rivers(int): number of rivers to add
+            river_distance(int): minimum distance between river start points
+        """
         #Generate simplex noise over each tile
         print("Generating Height Map...")
         tic = t.perf_counter()
@@ -89,10 +96,10 @@ class World(object):
                     stops.append((x,y))
 
         river_starts = []
-        for i in range(RIVER_AMOUNT):
+        for i in range(rivers):
             #Choose starting point sufficiently far away from other river starts
             distance = -1
-            while distance < RIVER_DISTANCE:
+            while distance < river_distance:
                 pstart = r.choice(mountains)
                 distances = []
                 for start in river_starts:
@@ -135,7 +142,7 @@ class World(object):
                         lowests.remove(cpos)
 
         toc = t.perf_counter()
-        print(f"Done! ({toc - tic:0.4f} seconds and {fails} fails out of {RIVER_AMOUNT} rivers)")
+        print(f"Done! ({toc - tic:0.4f} seconds and {fails} fails out of {rivers} rivers)")
         #Smoothing
         print("Smoothing Rivers...")
         tic = t.perf_counter()

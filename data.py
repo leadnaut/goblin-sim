@@ -15,6 +15,3 @@ TERRAINCOLOURS = {"Deep Ocean": (2, 7, 93),
                   "Hills": (68, 76, 56),
                   "Mountains": (58, 59, 60),
                   "River": (144, 204, 224)}
-
-RIVER_AMOUNT = 75
-RIVER_DISTANCE = 5
