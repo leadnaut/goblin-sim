@@ -1,5 +1,6 @@
 from data import *
 import png
+import random as r
 
 def hmap_to_png(world):
     pnglist = []
@@ -53,3 +54,22 @@ def world_stats(world):
     print("  Biome Tile Counts:")
     for name in biome_tallies.keys():
         print("   ", name +":", biome_tallies.get(name))
+
+def generate_name(sound_length):
+    vowel_sounds = ["a", "e", "i", "o", "ai", "ee", "oa", "oi", "ow", "ar",
+                    "ay", "ou", "ea", "aw", "ir", "ier", "oo", "or", "ur", "er",
+                    "'"]
+
+    consonant_sounds = ["b", "br", "c", "cr", "d", "dr", "f", "fr", "g", "gr",
+                        "gn", "h", "j", "k", "l", "m", "n", "p", "pr", "q", 
+                        "qu", "s", "st", "sh", "t", "th", "tr", "v", "x", "z"]
+    last = "v"
+    name = ""
+    for i in range(sound_length):
+        if last == "v":
+            name += r.choice(consonant_sounds)
+            last = "c"
+        else:
+            name += r.choice(vowel_sounds)
+            last = "v"
+    return name.capitalize()

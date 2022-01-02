@@ -70,6 +70,7 @@ class World(object):
         tmap = self._tmap
         toc = t.perf_counter()
         print(f"Done! ({toc - tic:0.4f} seconds)")
+        
         ### TERRAIN MAP 
         print("Creating Terrain Map...")
         tic = t.perf_counter()
@@ -162,5 +163,3 @@ class World(object):
         print(f"Done! ({toc -tic:0.4f} seconds and {count} smoothings)")
         print("Terrain Generated!")
         self._tmap = tmap
-
-
