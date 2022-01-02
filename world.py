@@ -54,24 +54,26 @@ class World(object):
             rivers(int): number of rivers to add
             river_distance(int): minimum distance between river start points
         """
-        #Generate simplex noise over each tile
+        ### HEIGHT MAP
         print("Generating Height Map...")
         tic = t.perf_counter()
         hmap = self._hmap
         gen = opensimplex.OpenSimplex(seed = r.randint(1,1000))
+        #Generate simplex noise over each tile
         for y, row in enumerate(hmap):
             for x in range(len(row)):
-                row[x] = (
-                0.8 * gen.noise2(x/75, y/75) +
-                0.3 * gen.noise2(x/20 + 7, y/20 + 7)
-                )
+                row[x] = (0.8 * gen.noise2(x/75, y/75) +
+                0.3 * gen.noise2(x/20 + 7, y/20 + 7))
+
                 row[x] = max(min((row[x] + 1)/2, 1), 0) #Scale and clamp between 0 and 1
         self._hmap = hmap
         tmap = self._tmap
         toc = t.perf_counter()
         print(f"Done! ({toc - tic:0.4f} seconds)")
+        ### TERRAIN MAP 
         print("Creating Terrain Map...")
         tic = t.perf_counter()
+        #Classify each tile based on TERRAINBOUNDS
         for y, row in enumerate(hmap):
             for x, hval in enumerate(row):
                 for bound in TERRAINBOUNDS:
@@ -79,10 +81,11 @@ class World(object):
                         tmap[y][x] = TERRAINBOUNDS.get(bound)
         toc = t.perf_counter()
         print(f"Done! ({toc - tic:0.4f} seconds)")
+
+        ### RIVER GENERATION
         print("Generating Rivers...")
-        fails = 0
+        fails = 0 #Fails are where river does not reach the ocean.
         tic = t.perf_counter()
-        ### RIVER TIME ###
         mountains = []
         stops = []
         #Find starting (mountains) and stopping points
@@ -106,17 +109,15 @@ class World(object):
                     distances.append(self.distance(pstart, start))
                 distance = min(distances, default = 999)
             river_starts.append(pstart)
+
             #Start river algorithm until it hits the shallows (or gets stuck)
             cpos = pstart
-            length = 0
             while cpos not in stops:
                 cx, cy = cpos
                 tmap[cy][cx] = "River"
-                length += 1
                 #Find the three lowest adjacent spaces
                 cadjacents = self.get_adjacents(cpos)
                 lowests = []
-
                 for j in range(3):
                     lowest = cadjacents[0]
                     for apos in cadjacents:
@@ -127,23 +128,26 @@ class World(object):
                 
                 #Add slight randomness to direction (stops straight line rivers)
                 cpos = r.choice(lowests)
-                #Check river is not looping if so stop it
+                #Check if river is about to loop and avoid it
                 while tmap[cpos[1]][cpos[0]] == "River":
-                    if len(lowests) == 0:
-                        #Pick any random path not a river and go (makes pools)
+                    if len(lowests) != 0:
+                        #Pick another one of the three lowests if possible
+                        cpos = r.choice(lowests)
+                        lowests.remove(cpos)
+                    else:
+                        #Pick any random direction not a river and go that way
                         if len(cadjacents) != 0:
                             cpos = r.choice(cadjacents)
                             cadjacents.remove(cpos)
                         else:
+                            #if no adjacents are not rivers - stop
                             fails += 1
                             cpos = stops[0]
-                    else:
-                        cpos = r.choice(lowests)
-                        lowests.remove(cpos)
-
+                        
         toc = t.perf_counter()
         print(f"Done! ({toc - tic:0.4f} seconds and {fails} fails out of {rivers} rivers)")
-        #Smoothing
+        
+        ### SMOOTHING
         print("Smoothing Rivers...")
         tic = t.perf_counter()
         count = 0
