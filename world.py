@@ -29,14 +29,18 @@ class World(object):
     def get_name(self):
         return self.name
 
-    def get_hvals(self, qposs):
-        vals = []
-        for qpos in qposs:
-            x, y = qpos    
-            vals.append(self._hmap[y][x])
-        return vals
+    def get_cost(self, pos1, pos2):
+        """
+        Returns 'cost' of moving between the two positions
+        Used in path finding.
+        """
+        terrains = self.get_tvals([pos1, pos2])
+        return (PATH_COSTS[terrains[0]] + PATH_COSTS[terrains[1]])/2
     
     def get_tvals(self, qposs):
+        """
+        Returns a list of the terrains of each of the positions in qposs
+        """
         vals = []
         for qpos in qposs:
             x, y = qpos    
@@ -44,12 +48,17 @@ class World(object):
         return vals
     
     def distance(self, pos1, pos2):
+        """
+        Calculates the Euclidean distance between two points.
+        Used as a close enough heuristic in pathfinding
+        """
         x1, y1 = pos1
         x2, y2 = pos2
         return m.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
     def generate_terrain(self, rivers, river_distance):
-        """Generates the world's terrain.
+        """
+        Generates the world's terrain.
         Parameters:
             rivers(int): number of rivers to add
             river_distance(int): minimum distance between river start points
@@ -70,15 +79,16 @@ class World(object):
         tmap = self._tmap
         toc = t.perf_counter()
         print(f"Done! ({toc - tic:0.4f} seconds)")
+        
         ### TERRAIN MAP 
         print("Creating Terrain Map...")
         tic = t.perf_counter()
         #Classify each tile based on TERRAINBOUNDS
         for y, row in enumerate(hmap):
             for x, hval in enumerate(row):
-                for bound in TERRAINBOUNDS:
+                for bound in TERRAIN_BOUNDS:
                     if bound[0] <= hval < bound[1]:
-                        tmap[y][x] = TERRAINBOUNDS.get(bound)
+                        tmap[y][x] = TERRAIN_BOUNDS.get(bound)
         toc = t.perf_counter()
         print(f"Done! ({toc - tic:0.4f} seconds)")
 
@@ -162,5 +172,3 @@ class World(object):
         print(f"Done! ({toc -tic:0.4f} seconds and {count} smoothings)")
         print("Terrain Generated!")
         self._tmap = tmap
-
-
