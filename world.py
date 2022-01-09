@@ -3,33 +3,33 @@ import time as t
 import math as m
 import opensimplex
 from data import *
-import png
+from typing import Tuple, List
 
 class World(object):
-    def __init__(self, name,width =  500, height = 500) -> None:
+    def __init__(self, name: str, width =  500, height = 500) -> None:
         self.name = name
         self._width = width
         self._height = height
         self._hmap = [[0 for i in range(width)] for i in range(height)]
         self._tmap = [["" for i in range(width)] for i in range(height)]
 
-    def get_adjacents(self, qpos):
+    def get_adjacents(self, qpos: Tuple[int, int]) -> List[Tuple[int, int]]:
         qx, qy = qpos
         xs = [max(qx - 1, 0), qx, min(qx + 1, self._width - 1)]
         ys = [max(qy - 1, 0), qy, min(qy + 1, self._height - 1)]
         adjacents = [(x,y) for x in xs for y in ys if (x,y) != qpos]
         return adjacents
 
-    def get_hmap(self):
+    def get_hmap(self) -> List[List[int]]:
         return self._hmap
     
-    def get_tmap(self):
+    def get_tmap(self) -> List[List[str]]:
         return self._tmap
     
-    def get_name(self):
+    def get_name(self) -> str:
         return self.name
 
-    def get_cost(self, pos1, pos2):
+    def get_cost(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
         """
         Returns 'cost' of moving between the two positions
         Used in path finding.
@@ -37,7 +37,7 @@ class World(object):
         terrains = self.get_tvals([pos1, pos2])
         return (PATH_COSTS[terrains[0]] + PATH_COSTS[terrains[1]])/2
     
-    def get_tvals(self, qposs):
+    def get_tvals(self, qposs: List[Tuple[int, int]]) -> List[str]:
         """
         Returns a list of the terrains of each of the positions in qposs
         """
@@ -47,7 +47,7 @@ class World(object):
             vals.append(self._tmap[y][x])
         return vals
     
-    def distance(self, pos1, pos2):
+    def distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
         """
         Calculates the Euclidean distance between two points.
         Used as a close enough heuristic in pathfinding
@@ -56,7 +56,7 @@ class World(object):
         x2, y2 = pos2
         return m.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
-    def generate_terrain(self, rivers, river_distance):
+    def generate_terrain(self, rivers: int, river_distance: float) -> None:
         """
         Generates the world's terrain.
         Parameters:

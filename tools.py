@@ -2,8 +2,10 @@ from data import *
 import png
 import random as r
 import heapq
+import world as w
+from typing import List, Tuple
 
-def hmap_to_png(world):
+def hmap_to_png(world: w.World):
     pnglist = []
     hmap = world.get_hmap()
     for row in hmap:
@@ -15,23 +17,19 @@ def hmap_to_png(world):
     image = png.from_array(pnglist, "L")
     image.save(f"{world.get_name()}_hmap.png")
 
-def tmap_to_png(world, path):
+def tmap_to_png(world: w.World):
     pnglist = []
     tmap = world.get_tmap()
     for y, row in enumerate(tmap):
         pngrow = []
         for x, tval in enumerate(row):
-            if (x,y) in path:
-                pngrow += [255, 0, 0]
-            else:
-                colour = TERRAIN_COLOURS.get(tval)
-                pngrow += list(colour)
+            colour = TERRAIN_COLOURS.get(tval)
+            pngrow += list(colour)
         pnglist.append(pngrow)
-    
     image = png.from_array(pnglist, "RGB")
     image.save(f"{world.get_name()}_tmap.png")
 
-def world_stats(world):
+def world_stats(world: w.World):
     print("World Analysis:")
     hmap = world.get_hmap()
     lowest = 1
@@ -62,19 +60,20 @@ def world_stats(world):
 
 ### PATHFINDING
 class Priority_Queue:
-    def __init__(self):
+    def __init__(self) -> None:
         self.elements = [] #List of tuples of form [priority element]
     
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return not self.elements
     
-    def put(self, item, priority):
+    def put(self, item, priority: float) -> None:
         heapq.heappush(self.elements, (priority, item))
     
-    def get(self):
+    def get(self) -> "t":
         return heapq.heappop(self.elements)[1]
 
-def a_star_pathfinding(world, start, end):
+def a_star_pathfinding(world: w.World, start: Tuple[int, int], 
+    end: Tuple[int, int]) -> List[Tuple[int, int]]:
     frontier = Priority_Queue()
     frontier.put(start, 0)
     came_from = {}
@@ -108,13 +107,13 @@ def a_star_pathfinding(world, start, end):
 
 
 ### OTHER TOOLS
-def generate_name(sound_length):
+def generate_name(sound_length: int) -> str:
     vowel_sounds = ["a", "e", "i", "o", "ai", "ee", "oa", "oi", "ow", "ar",
                     "ay", "ou", "ea", "aw", "ir", "ier", "oo", "or", "ur", "er",
                     "'"]
 
     consonant_sounds = ["b", "br", "c", "ck", "cr", "d", "dr", "f", "fr", "g", 
-                        "gr", "gn", "h", "j", "k", "l", "m", "n", "p", "pr", "q", 
+                        "gr", "h", "j", "k", "l", "m", "n", "p", "pr", "q", 
                         "qu", "s", "st", "sh", "t", "th", "tr", "v", "x", "z"]
     last = "v"
     name = ""
