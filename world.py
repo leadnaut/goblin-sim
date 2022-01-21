@@ -42,8 +42,12 @@ class World(object):
         Returns 'cost' of moving between the two positions
         Used in path finding.
         """
+        cost = 0
         terrains = self.get_tvals([pos1, pos2])
-        return (PATH_COSTS[terrains[0]] + PATH_COSTS[terrains[1]])/2
+        if len([t for t in terrains if t in LAND_TERRAINS]) == 1:
+            #If exactly 1 of the two terrains is land add a en/disembark fee
+            cost = 30
+        return (PATH_COSTS[terrains[0]] + PATH_COSTS[terrains[1]])/2 + cost
     
     def get_tvals(self, qposs: List[Tuple[int, int]]) -> List[str]:
         """
@@ -201,7 +205,7 @@ class World(object):
                     if "River" in adj_tvals or adj_tvals.count("Flatlands") + adj_tvals.count("Beach") >= 4:
                         score = adj_tvals.count("Flatlands")
                         score += adj_tvals.count("River") * 50
-                        score += adj_tvals.count("Shallow Ocean") * 25
+                        score += adj_tvals.count("Shallow Ocean") * 10
                         settlement_poss.append((x,y))
                         scores.append(score)
         toc = t.perf_counter()
@@ -229,7 +233,7 @@ class World(object):
         #For each settlement pathfind to close (not all - it takes way too long) settlements
         roads = {}
         for start in self._settlements:
-            close_ends = [x for x in self._settlements if self.distance(start.get_position(), x.get_position()) < 50]
+            close_ends = [x for x in self._settlements if self.distance(start.get_position(), x.get_position()) < 100]
             for end in close_ends:
                 roads_to_end = roads.get(end)
                 if start != end and (not roads_to_end or start not in roads_to_end):
@@ -239,11 +243,15 @@ class World(object):
                         roads[start].append(end)
                     path = tls.a_star_pathfinding(self, start.get_position(), end.get_position())
                     for pos in path:
-                        if self.get_tvals([pos])[0] == "Settlement":
+                        tval = self.get_tvals([pos])[0]
+                        if tval == "Settlement":
                             if pos != path[0]:
                                 break
                         else:
-                            self._tmap[pos[1]][pos[0]] = "Road"
+                            if tval in LAND_TERRAINS:                          
+                                self._tmap[pos[1]][pos[0]] = "Road"
+                            else:
+                                self._tmap[pos[1]][pos[0]] = "Sea Route"
         toc = t.perf_counter()
         print(f"Done! ({toc - tic:0.4f} seconds)")
                         

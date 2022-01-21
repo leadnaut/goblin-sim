@@ -24,6 +24,8 @@ def world_to_png(world: "World"):
         for x, tval in enumerate(row):
             colour = TERRAIN_COLOURS.get(tval)
             pngrow += list(colour)
+        for i, cval in enumerate(pngrow):
+            pngrow[i] = min(max(int(cval + r.normalvariate(0,2)), 0), 255)
         pnglist.append(pngrow)
     image = png.from_array(pnglist, "RGB")
     image.save(f"{world.get_name()}_tmap.png")
