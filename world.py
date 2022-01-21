@@ -1,8 +1,11 @@
+import tools as tls
+import civilisations as c
+from data import *
+
 import random as r
 import time as t
 import math as m
 import opensimplex
-from data import *
 from typing import Tuple, List
 
 class World(object):
@@ -12,6 +15,8 @@ class World(object):
         self._height = height
         self._hmap = [[0 for i in range(width)] for i in range(height)]
         self._tmap = [["" for i in range(width)] for i in range(height)]
+        self._countries = []
+        self._settlements = []
 
     def get_adjacents(self, qpos: Tuple[int, int]) -> List[Tuple[int, int]]:
         qx, qy = qpos
@@ -28,6 +33,9 @@ class World(object):
     
     def get_name(self) -> str:
         return self.name
+    
+    def get_settlements(self) -> str:
+        return self._settlements
 
     def get_cost(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
         """
@@ -172,3 +180,70 @@ class World(object):
         print(f"Done! ({toc -tic:0.4f} seconds and {count} smoothings)")
         print("Terrain Generated!")
         self._tmap = tmap
+
+    def generate_civilisation(self, num_countries: int, num_settlements: int) -> None:
+        """
+        Generates settlements and countries into the world
+        Parameters:
+            num_countries = number of countries to group settlements into
+            num_settlements = number of settlements
+        """
+        #Cities will either be next to river or surrounded by at least 4 grassland tiles
+        print("Finding potential settlement locations...")
+        tic = t.perf_counter()
+        settlement_poss = []
+        scores = []
+        tmap = self.get_tmap()
+        for y, row in enumerate(tmap):
+            for x, tval in enumerate(row):
+                if tval not in ["River", "Shallow Ocean", "Medium Ocean", "Deep Ocean"]:
+                    adj_tvals = self.get_tvals(self.get_adjacents((x,y)))
+                    if "River" in adj_tvals or adj_tvals.count("Flatlands") + adj_tvals.count("Beach") >= 4:
+                        score = adj_tvals.count("Flatlands")
+                        score += adj_tvals.count("River") * 50
+                        score += adj_tvals.count("Shallow Ocean") * 25
+                        settlement_poss.append((x,y))
+                        scores.append(score)
+        toc = t.perf_counter()
+        print(f"Done! ({toc - tic:0.4f} seconds, {len(settlement_poss)} locations found)")
+
+        print("Choosing settlement locations...")
+        tic = t.perf_counter()
+        for i in range(num_settlements):
+            if settlement_poss:
+                #Pick one and remove all those close to the city
+                spos = r.choices(settlement_poss, weights = scores)[0]
+                for i, pos in enumerate(settlement_poss):
+                    if self.distance(spos, pos) < SETTLEMENT_DISTANCE:
+                        settlement_poss.pop(i)
+                        scores.pop(i)
+                name = tls.generate_name(6)
+                settlement = c.Settlement(name, self, spos)
+                self._tmap[spos[1]][spos[0]] = "Settlement"
+                self._settlements.append(settlement)
+        toc = t.perf_counter()
+        print(f"Done! ({toc - tic:0.4f} seconds)")
+
+        print("Building Roads...")
+        tic = t.perf_counter()
+        #For each settlement pathfind to close (not all - it takes way too long) settlements
+        roads = {}
+        for start in self._settlements:
+            close_ends = [x for x in self._settlements if self.distance(start.get_position(), x.get_position()) < 50]
+            for end in close_ends:
+                roads_to_end = roads.get(end)
+                if start != end and (not roads_to_end or start not in roads_to_end):
+                    if not roads.get(start):
+                        roads[start] = [end]
+                    else:
+                        roads[start].append(end)
+                    path = tls.a_star_pathfinding(self, start.get_position(), end.get_position())
+                    for pos in path:
+                        if self.get_tvals([pos])[0] == "Settlement":
+                            if pos != path[0]:
+                                break
+                        else:
+                            self._tmap[pos[1]][pos[0]] = "Road"
+        toc = t.perf_counter()
+        print(f"Done! ({toc - tic:0.4f} seconds)")
+                        

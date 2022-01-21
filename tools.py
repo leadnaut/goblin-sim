@@ -2,10 +2,9 @@ from data import *
 import png
 import random as r
 import heapq
-import world as w
 from typing import List, Tuple
 
-def hmap_to_png(world: w.World):
+def hmap_to_png(world: "World"):
     pnglist = []
     hmap = world.get_hmap()
     for row in hmap:
@@ -17,10 +16,10 @@ def hmap_to_png(world: w.World):
     image = png.from_array(pnglist, "L")
     image.save(f"{world.get_name()}_hmap.png")
 
-def tmap_to_png(world: w.World):
+def world_to_png(world: "World"):
     pnglist = []
-    tmap = world.get_tmap()
-    for y, row in enumerate(tmap):
+    cmap = world.get_tmap()
+    for y, row in enumerate(cmap):
         pngrow = []
         for x, tval in enumerate(row):
             colour = TERRAIN_COLOURS.get(tval)
@@ -29,7 +28,7 @@ def tmap_to_png(world: w.World):
     image = png.from_array(pnglist, "RGB")
     image.save(f"{world.get_name()}_tmap.png")
 
-def world_stats(world: w.World):
+def world_stats(world: "World"):
     print("World Analysis:")
     hmap = world.get_hmap()
     lowest = 1
@@ -72,7 +71,7 @@ class Priority_Queue:
     def get(self) -> "t":
         return heapq.heappop(self.elements)[1]
 
-def a_star_pathfinding(world: w.World, start: Tuple[int, int], 
+def a_star_pathfinding(world: "World", start: Tuple[int, int], 
     end: Tuple[int, int]) -> List[Tuple[int, int]]:
     frontier = Priority_Queue()
     frontier.put(start, 0)

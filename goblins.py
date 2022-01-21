@@ -6,4 +6,5 @@ import random as r
 r.seed("hny")
 test = w.World("test")
 test.generate_terrain(75, 5)
-tls.tmap_to_png(test)
+test.generate_civilisation(1, 100)
+tls.world_to_png(test)
