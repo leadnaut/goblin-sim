@@ -24,9 +24,9 @@ TERRAIN_COLOURS = {"Deep Ocean": (2, 7, 93),
 
 #Path-finding
 #Represents the relative costs of moving through a terrain type (higher => less likely to pathfind through)
-PATH_COSTS = {"Deep Ocean": 50,
-              "Medium Ocean": 30,
-              "Shallow Ocean": 25,
+PATH_COSTS = {"Deep Ocean": 25,
+              "Medium Ocean": 20,
+              "Shallow Ocean": 15,
               "Beach": 15,
               "Flatlands": 5,
               "Hills": 10,
@@ -37,3 +37,5 @@ PATH_COSTS = {"Deep Ocean": 50,
               "Sea Route": 0}
 
 SETTLEMENT_DISTANCE = 20
+ROAD_SEARCH_DISTANCE = 75
+EMBARKMENT_COST = 40

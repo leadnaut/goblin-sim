@@ -46,7 +46,7 @@ class World(object):
         terrains = self.get_tvals([pos1, pos2])
         if len([t for t in terrains if t in LAND_TERRAINS]) == 1:
             #If exactly 1 of the two terrains is land add a en/disembark fee
-            cost = 30
+            cost = EMBARKMENT_COST
         return (PATH_COSTS[terrains[0]] + PATH_COSTS[terrains[1]])/2 + cost
     
     def get_tvals(self, qposs: List[Tuple[int, int]]) -> List[str]:
@@ -66,7 +66,7 @@ class World(object):
         """
         x1, y1 = pos1
         x2, y2 = pos2
-        return m.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+        return m.sqrt( (x2 - x1)**2 + (y2 - y1)**2 )
 
     def generate_terrain(self, rivers: int, river_distance: float) -> None:
         """
@@ -215,12 +215,14 @@ class World(object):
         tic = t.perf_counter()
         for i in range(num_settlements):
             if settlement_poss:
-                #Pick one and remove all those close to the city
-                spos = r.choices(settlement_poss, weights = scores)[0]
-                for i, pos in enumerate(settlement_poss):
-                    if self.distance(spos, pos) < SETTLEMENT_DISTANCE:
-                        settlement_poss.pop(i)
-                        scores.pop(i)
+                distance = -1
+                while distance < SETTLEMENT_DISTANCE:
+                    spos = r.choices(settlement_poss, weights = scores)[0]
+                    distances = []
+                    for settlement in self._settlements:
+                        pos = settlement.get_position()
+                        distances.append(self.distance(spos, pos))
+                    distance = min(distances, default = 999)
                 name = tls.generate_name(6)
                 settlement = c.Settlement(name, self, spos)
                 self._tmap[spos[1]][spos[0]] = "Settlement"
@@ -231,21 +233,24 @@ class World(object):
         print("Building Roads...")
         tic = t.perf_counter()
         #For each settlement pathfind to close (not all - it takes way too long) settlements
-        roads = {}
+        road_count = 0
+        roads = [] #List of tuples pf connected settlements
         for start in self._settlements:
-            close_ends = [x for x in self._settlements if self.distance(start.get_position(), x.get_position()) < 100]
+            close_ends = [x for x in self._settlements if self.distance(start.get_position(), x.get_position()) < ROAD_SEARCH_DISTANCE ]
             for end in close_ends:
-                roads_to_end = roads.get(end)
-                if start != end and (not roads_to_end or start not in roads_to_end):
-                    if not roads.get(start):
-                        roads[start] = [end]
-                    else:
-                        roads[start].append(end)
+                if start != end and (start, end) not in roads and (end, start) not in roads:
+                    roads.append((start, end))
                     path = tls.a_star_pathfinding(self, start.get_position(), end.get_position())
+                    road_count += 1                   
                     for pos in path:
                         tval = self.get_tvals([pos])[0]
                         if tval == "Settlement":
                             if pos != path[0]:
+                                #Add road to register (should cut down on duplicates)
+                                for settlement in self._settlements:
+                                    if settlement.get_position() == pos:
+                                        break
+                                    roads.append((start, settlement))
                                 break
                         else:
                             if tval in LAND_TERRAINS:                          
@@ -253,5 +258,5 @@ class World(object):
                             else:
                                 self._tmap[pos[1]][pos[0]] = "Sea Route"
         toc = t.perf_counter()
-        print(f"Done! ({toc - tic:0.4f} seconds)")
+        print(f"Done! ({toc - tic:0.4f} seconds, and {road_count} roads found)")
                         
