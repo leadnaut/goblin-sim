@@ -1,3 +1,4 @@
+from numpy import seterrcall
 import tools as tls
 import civilisations as c
 from data import *
@@ -6,7 +7,7 @@ import random as r
 import time as t
 import math as m
 import opensimplex
-from typing import Tuple, List
+from typing import Dict, Tuple, List
 
 class World(object):
     def __init__(self, name: str, width =  500, height = 500) -> None:
@@ -37,6 +38,15 @@ class World(object):
     def get_settlements(self) -> str:
         return self._settlements
 
+    def get_settlements_pos(self) -> Dict[tuple, c.Settlement]:
+        dictionary = {}
+        for settlement in self._settlements:
+            dictionary[settlement.get_position()] = settlement
+        return dictionary
+    
+    def get_countries(self):
+        return self._countries
+
     def get_cost(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
         """
         Returns 'cost' of moving between the two positions
@@ -44,10 +54,11 @@ class World(object):
         """
         cost = 0
         terrains = self.get_tvals([pos1, pos2])
+        heights = self.get_hvals([pos1, pos2])
         if len([t for t in terrains if t in LAND_TERRAINS]) == 1:
             #If exactly 1 of the two terrains is land add a en/disembark fee
             cost = EMBARKMENT_COST
-        return (PATH_COSTS[terrains[0]] + PATH_COSTS[terrains[1]])/2 + cost
+        return (PATH_COSTS[terrains[0]] + PATH_COSTS[terrains[1]])/2 + cost + 100 * abs(heights[0] - heights[1])
     
     def get_tvals(self, qposs: List[Tuple[int, int]]) -> List[str]:
         """
@@ -57,6 +68,16 @@ class World(object):
         for qpos in qposs:
             x, y = qpos    
             vals.append(self._tmap[y][x])
+        return vals
+    
+    def get_hvals(self, qposs: List[Tuple[int, int]]) -> List[str]:
+        """
+        Returns a list of the terrains of each of the positions in qposs
+        """
+        vals = []
+        for qpos in qposs:
+            x, y = qpos    
+            vals.append(self._hmap[y][x])
         return vals
     
     def distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> float:
@@ -223,7 +244,7 @@ class World(object):
                         pos = settlement.get_position()
                         distances.append(self.distance(spos, pos))
                     distance = min(distances, default = 999)
-                name = tls.generate_name(6)
+                name = tls.generate_name(4)
                 settlement = c.Settlement(name, self, spos)
                 self._tmap[spos[1]][spos[0]] = "Settlement"
                 self._settlements.append(settlement)
@@ -259,4 +280,21 @@ class World(object):
                                 self._tmap[pos[1]][pos[0]] = "Sea Route"
         toc = t.perf_counter()
         print(f"Done! ({toc - tic:0.4f} seconds, and {road_count} roads found)")
+        print("Creating Countries...")
+        tic = t.perf_counter()
+        #Pick a random settlement to make a capital
+        settlements = self._settlements.copy()
+        while settlements:
+            country = c.Country(tls.generate_name(6), self, r.choice(COUNTRY_COLOURS))
+            self._countries.append(country)
+            capital = r.choice(settlements)
+            capital.add_tag("Capital")
+            for settlement in settlements:
+                if self.distance(settlement.get_position(), capital.get_position()) < 150:
+                    settlement.set_country(country)
+                    country.add_settlement(settlement)
+                    settlements.remove(settlement)          
+
+        toc = t.perf_counter()
+        print(f"Done! ({toc-tic:0.4f} seconds)")    
                         

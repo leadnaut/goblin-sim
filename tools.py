@@ -1,10 +1,11 @@
+
 from data import *
 import png
 import random as r
 import heapq
 from typing import List, Tuple
 
-def hmap_to_png(world: "World"):
+def hmap_to_png(world):
     pnglist = []
     hmap = world.get_hmap()
     for row in hmap:
@@ -16,21 +17,33 @@ def hmap_to_png(world: "World"):
     image = png.from_array(pnglist, "L")
     image.save(f"{world.get_name()}_hmap.png")
 
-def world_to_png(world: "World"):
+
+def world_to_png(world):
     pnglist = []
-    cmap = world.get_tmap()
-    for y, row in enumerate(cmap):
+    tmap = world.get_tmap()
+    hmap = world.get_hmap()
+    settlement_poss = world.get_settlements_pos()
+    for y, row in enumerate(tmap):
         pngrow = []
         for x, tval in enumerate(row):
-            colour = TERRAIN_COLOURS.get(tval)
-            pngrow += list(colour)
-        for i, cval in enumerate(pngrow):
-            pngrow[i] = min(max(int(cval + r.normalvariate(0,2)), 0), 255)
+            if (x,y) in settlement_poss.keys() or tval == "Settlement":
+                settlement = settlement_poss[(x,y)]
+                colour = settlement.get_country().get_colour()
+                clist = list(colour)
+            else:
+                height = hmap[y][x]
+                colour = TERRAIN_COLOURS.get(tval)
+                clist = []
+                for val in colour:
+                    clist.append(max(min(int(val - 60 * height), 255),0))
+            
+            pngrow += clist
         pnglist.append(pngrow)
     image = png.from_array(pnglist, "RGB")
-    image.save(f"{world.get_name()}_tmap.png")
+    image.save(f"{world.get_name()}_map.png")
 
-def world_stats(world: "World"):
+
+def world_stats_dialog(world) -> None:
     print("World Analysis:")
     hmap = world.get_hmap()
     lowest = 1
@@ -49,7 +62,10 @@ def world_stats(world: "World"):
                      "Flatlands": 0,
                      "Hills": 0,
                      "Mountains": 0,
-                     "River": 0}
+                     "River": 0,
+                     "Settlement": 0,
+                     "Road": 0,
+                     "Sea Route": 0}
     tmap = world.get_tmap()
     for row in tmap:
         for tval in row:
@@ -57,6 +73,25 @@ def world_stats(world: "World"):
     print("  Biome Tile Counts:")
     for name in biome_tallies.keys():
         print("   ", name +":", biome_tallies.get(name))
+    
+    print("Countries")
+    countries = world.get_countries()
+    i = 0
+    options = {}
+    for country in countries:
+        print(i, "-", country.get_name())
+        options[i] = country
+        i += 1
+    selection = 0
+    while selection != "99":
+        selection = input("Choose a country: ")
+        country = options[int(selection)]
+        print(f"Capital: {country.get_capital().get_name()}")
+        print(F"Size: {country.get_size()}")
+        settlements = country.get_settlements()
+        for settlement in settlements:
+            print(settlement.get_name())
+        
 
 
 ### PATHFINDING
@@ -73,7 +108,7 @@ class Priority_Queue:
     def get(self) -> "t":
         return heapq.heappop(self.elements)[1]
 
-def a_star_pathfinding(world: "World", start: Tuple[int, int], 
+def a_star_pathfinding(world, start: Tuple[int, int], 
     end: Tuple[int, int]) -> List[Tuple[int, int]]:
     frontier = Priority_Queue()
     frontier.put(start, 0)

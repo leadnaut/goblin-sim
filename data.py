@@ -14,12 +14,12 @@ TERRAIN_COLOURS = {"Deep Ocean": (2, 7, 93),
                   "Medium Ocean": (0, 65, 194),
                   "Shallow Ocean": (173, 216, 230),
                   "Beach": (220, 192, 139),
-                  "Flatlands": (44, 109, 8),
-                  "Hills": (68, 76, 56),
-                  "Mountains": (58, 59, 60),
+                  "Flatlands": (126, 200, 80),
+                  "Hills": (73, 81, 61),
+                  "Mountains": (68, 69, 70),
                   "River": (144, 204, 224),
                   "Settlement": (255, 0, 0),
-                  "Road": (188, 74, 60),
+                  "Road": (122, 112, 102),
                   "Sea Route": (116, 187, 251)}
 
 #Path-finding
@@ -33,9 +33,22 @@ PATH_COSTS = {"Deep Ocean": 25,
               "Mountains": 15,
               "River": 15,
               "Settlement": 5,
-              "Road": 0,
-              "Sea Route": 0}
+              "Road": 1,
+              "Sea Route": 1}
 
 SETTLEMENT_DISTANCE = 20
 ROAD_SEARCH_DISTANCE = 75
 EMBARKMENT_COST = 40
+
+COUNTRY_COLOURS = [(118, 55, 219),
+                   (219, 55, 203),
+                   (41, 255, 209),
+                   (89, 13, 13),
+                   (70, 204, 43),
+                   (208, 255, 20),
+                   (78, 253, 84),
+                   (254, 103, 0),
+                   (254, 1, 177),
+                   (102, 0, 255),
+                   (230, 0, 0),
+                   (255, 247, 0)]
