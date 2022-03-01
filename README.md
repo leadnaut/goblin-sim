@@ -4,7 +4,9 @@ This project is an attempt to create a procedural goblin fantasy world generator
 
 Files:
 
-- goblins.py - main runtime file
+- main.py - main runtime file
 - world.py - world class and generation
+- civilisation.py - settlement and country generation
+- goblin.py - goblin class and jobs
 - tools.py - general analysis and visualisation tools
 - data.py - config data storage

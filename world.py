@@ -1,6 +1,6 @@
 from numpy import seterrcall
 import tools as tls
-import civilisations as c
+import civilisation as c
 from data import *
 
 import random as r
@@ -55,7 +55,8 @@ class World(object):
         cost = 0
         terrains = self.get_tvals([pos1, pos2])
         heights = self.get_hvals([pos1, pos2])
-        if len([t for t in terrains if t in LAND_TERRAINS]) == 1:
+        if ("Settlement" not in terrains and 
+            len([h for h in heights if h <= OCEAN_CUTOFF]) == 1):
             #If exactly 1 of the two terrains is land add a en/disembark fee
             cost = EMBARKMENT_COST
         return (PATH_COSTS[terrains[0]] + PATH_COSTS[terrains[1]])/2 + cost + 100 * abs(heights[0] - heights[1])
@@ -106,7 +107,6 @@ class World(object):
             for x in range(len(row)):
                 row[x] = (0.8 * gen.noise2(x/75, y/75) +
                 0.3 * gen.noise2(x/20 + 7, y/20 + 7))
-
                 row[x] = max(min((row[x] + 1)/2, 1), 0) #Scale and clamp between 0 and 1
         self._hmap = hmap
         tmap = self._tmap
@@ -280,6 +280,24 @@ class World(object):
                                 self._tmap[pos[1]][pos[0]] = "Sea Route"
         toc = t.perf_counter()
         print(f"Done! ({toc - tic:0.4f} seconds, and {road_count} roads found)")
+        
+        print("Cleaning up ports...")
+        tic = t.perf_counter()
+        count = 0
+        for y, row in enumerate(self._tmap):
+            for x, tval in enumerate(row):
+                if tval == "Road":
+                    adjacents = self.get_adjacents((x,y))
+                    atval = self.get_tvals(adjacents)
+                    if "Sea Route" in atval and "Settlement" not in atval:
+                        count += 1
+                        name = tls.generate_name(4)
+                        settlement = c.Settlement(name, self, (x,y))
+                        self._settlements.append(settlement)
+                        self._tmap[y][x] = "Settlement"
+        toc = t.perf_counter()
+        print(f"Done! ({toc - tic:0.4f} seconds, and {count} ports added)")
+
         print("Creating Countries...")
         tic = t.perf_counter()
         #Pick a random settlement to make a capital
@@ -296,5 +314,11 @@ class World(object):
                     settlements.remove(settlement)          
 
         toc = t.perf_counter()
-        print(f"Done! ({toc-tic:0.4f} seconds)")    
+        print(f"Done! ({toc-tic:0.4f} seconds)")
+        print("Generating settlements...")
+        tic = t.perf_counter()
+        for settlement in self._settlements:
+            settlement.generate()
+        toc = t.perf_counter()
+        print(f"Done! ({toc-tic:0.4f} seconds)")
                         

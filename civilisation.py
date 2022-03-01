@@ -55,7 +55,8 @@ class Settlement(object):
         return self.tags
     
     def add_tag(self, tag: str) -> None:
-        self.tags.append(tag)
+        if tag not in self.tags:
+            self.tags.append(tag)
     
     def get_country(self) -> str:
         return self.country
@@ -64,7 +65,31 @@ class Settlement(object):
         self.country = country
     
     def generate(self):
-        pass
+        #Assemble tags -> act on tags
+        adjacents = self.world.get_adjacents(self.position)
+        adjtvals = self.world.get_tvals(adjacents)
+        counts = {}
+        #do all counting now -> stops repetitive calls of the .count method (slow)
+        for tval in adjtvals:
+            if tval in counts.keys():
+                counts[tval] += 1
+            else:
+                counts[tval] = 1
+        #assemble tags
+        if counts.get("Flatland", 0) >= 2:
+            self.add_tag("Flatland")
+        if counts.get("Hill", 0) >= 2:
+            self.add_tag("Hill")
+        if counts.get("Mountain", 0) >= 2:
+            self.add_tag("Mountain")
+        if counts.get("Beach", 0) >= 2:
+            self.add_tag("Beach")
+        if counts.get("River", 0) >= 1:
+            self.add_tag("River")
+        if counts.get("Shallow Ocean", 0) >= 1:
+            self.add_tag("Port")
+        
+
 
     def update(self):
         pass
